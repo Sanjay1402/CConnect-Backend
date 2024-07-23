@@ -14,11 +14,7 @@ const connectToDatabase = require('./controllers/dbConfig');
 
 app.use(express.json())
 const stripe = require('stripe')(process.env.STRIPE_PRIVATE_KEY)
-const courses = new Map([
-    
-  [1, {priceInCents:10000, name:'Yasir Plumber' }],
 
-])
 
 
 
@@ -129,34 +125,54 @@ app.get('/services/:categoryId', async (req, res) => {
 });
 
 app.post('/create-checkout-session', async (req, res) => {
-
+  const courses = new Map([
+    
+    [1, { priceInCents: 10000, name: 'Ali', description: 'Providing the basic painting services in local area' }],
+    [2, { priceInCents: 15000, name: 'Ahmed', description: 'Providing the basic electrican services' }],
+    [3, { priceInCents: 20000, name: 'Yasir', description: 'Providing the water services in local area' }],
+    [4, { priceInCents: 25000, name: 'Nirmal', description: 'Providing basic medical services to the local area' }],
+    [5, { priceInCents: 30000, name: 'Sanjay', description: 'Provide techinal services in local area' }],
+    [6, { priceInCents: 35000, name: 'Saleem', description: 'Provide basic repairing services like washbasin repairing' }],
+    [7, { priceInCents: 40000, name: 'Lokesh', description: 'Providing basic home cleaning services in local area' }],
+    [8, { priceInCents: 45000, name: 'Bimal', description: 'Providing some electronic services' }],
+    [9, { priceInCents: 50000, name: 'Sandeep', description: 'Providing the Home cleaning Services' }],
+    [10, { priceInCents: 55000, name: 'Maaz', description: 'Providing some cooking in local area' }],
+    [11, { priceInCents: 60000, name: 'Shah', description: 'Providing some ac repairing in local area' }],
+    [12, { priceInCents: 65000, name: 'Naseem', description: 'Providing some tv repairing in local area' }],
   
-  try{
-     const session = await stripe.checkout.sessions.create({
+  ])
+  
+  try {
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
       line_items: req.body.items.map(item => {
-          const course = courses.get(item.id)
-          return {
-              price_data:{
-                  currency:'usd',
-                  product_data: {
-                      name: course.name
-                  },
-                  unit_amount: course.priceInCents
-              },
-              quantity: item.quantity
-          }
+        const course = courses.get(item.id);
+        if (!course) {
+          throw new Error(`Course with ID ${item.id} not found`);
+        }
+        return {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: course.name,
+              description: course.description,
+            },
+            unit_amount: course.priceInCents,
+          },
+          quantity: item.quantity,
+        };
       }),
-      success_url: `${process.env.SERVER_URL}/success.html`,
-      cancel_url: `${process.env.SERVER_URL}/cancel.html`
-     })
-     res.json({url: session.url})
-  }catch(e){
-      res.status(500).json({error: e.message})
-  }
-})
+      success_url: `http://localhost:5173/book_service`,
+      cancel_url: `http://localhost:5173/book_service/`,
+    });
 
+    res.json({ url: session.url });
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
